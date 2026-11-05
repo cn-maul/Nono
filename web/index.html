@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nono</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="notch" id="notch">
+    <button class="edge left" id="prev" aria-label="上一个会话">‹</button>
+    <button class="edge right" id="next" aria-label="下一个会话">›</button>
+
+    <header class="bar" id="bar">
+      <div class="pill" id="center">
+        <img class="logo" src="./assets/qoder.png" alt="Qoder">
+        <span class="dot idle" id="dot"></span>
+        <span class="project" id="bar-project">Qoder</span>
+        <span class="state" id="bar-state">未运行</span>
+        <span class="metric" id="bar-metric-1">—</span>
+        <span class="metric" id="bar-metric-2">—</span>
+        <span class="badge" id="badge" hidden></span>
+      </div>
+    </header>
+
+    <section class="detail" id="detail">
+      <div class="headline">
+        <div class="headline-main">
+          <img class="logo detail-logo" src="./assets/qoder.png" alt="Qoder">
+          <div class="headline-text">
+            <div class="title" id="title">Qoder</div>
+            <div class="sub" id="sub">未运行</div>
+          </div>
+        </div>
+        <div class="headline-side">
+          <span class="queue" id="queue" hidden></span>
+          <span class="position" id="position"></span>
+        </div>
+      </div>
+
+      <div class="status-line">
+        <span class="chip idle" id="chip">未运行</span>
+        <span class="hint" id="hint"></span>
+      </div>
+
+      <div class="metrics">
+        <div class="metric-card">
+          <span class="label">首字均值</span>
+          <strong id="m-ttft">—</strong>
+        </div>
+        <div class="metric-card">
+          <span class="label">首字后时长</span>
+          <strong id="m-post">—</strong>
+        </div>
+        <div class="metric-card">
+          <span class="label">token 速度</span>
+          <strong id="m-tps">—</strong>
+        </div>
+        <div class="metric-card">
+          <span class="label">最近 5 轮</span>
+          <div class="spark-bars" id="spark"></div>
+        </div>
+      </div>
+
+      <div class="actions" id="actions" hidden>
+        <button class="primary" id="open-qoder">打开 Qoder</button>
+        <button class="primary" id="handle" hidden>去处理</button>
+        <button id="skip" hidden>跳过</button>
+      </div>
+
+      <div class="toast" id="toast" hidden></div>
+    </section>
+  </div>
+
+  <script src="./main.js"></script>
+</body>
+</html>

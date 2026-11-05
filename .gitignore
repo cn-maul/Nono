@@ -1,0 +1,17 @@
+# Build output
+/nono.exe
+/nono.exe~
+/build/
+/dist/
+/.mygo/
+/*.test
+/*.test.exe
+
+# Local logs and screenshots
+/*.log
+/*.png
+/*.tmp
+
+# OS metadata
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nono 设置</title>
+  <link rel="stylesheet" href="./settings.css">
+</head>
+<body>
+  <main class="panel">
+    <header class="head">
+      <div>
+        <h1>设置</h1>
+        <p>选择哪些 agent 显示在刘海屏中；标注“暂未接入”的目前只保存开关状态</p>
+      </div>
+    </header>
+
+    <section class="agents" id="agents"></section>
+
+    <footer class="foot">
+      <span class="error" id="error"></span>
+      <button id="cancel">取消</button>
+      <button class="primary" id="save">保存</button>
+    </footer>
+  </main>
+
+  <script src="./settings.js"></script>
+</body>
+</html>
