@@ -13,20 +13,21 @@
 
     <header class="bar" id="bar">
       <div class="pill" id="center">
-        <img class="logo" src="./assets/qoder.png" alt="Qoder">
+        <img class="logo" id="bar-logo" src="./assets/nono-32.png" alt="Nono">
         <span class="dot idle" id="dot"></span>
         <span class="project" id="bar-project">Qoder</span>
         <span class="state" id="bar-state">未运行</span>
         <span class="metric" id="bar-metric-1">—</span>
         <span class="metric" id="bar-metric-2">—</span>
         <span class="badge" id="badge" hidden></span>
+        <span class="clock" id="clock">--:--</span>
       </div>
     </header>
 
     <section class="detail" id="detail">
       <div class="headline">
         <div class="headline-main">
-          <img class="logo detail-logo" src="./assets/qoder.png" alt="Qoder">
+          <img class="logo detail-logo" id="detail-logo" src="./assets/nono-32.png" alt="Nono">
           <div class="headline-text">
             <div class="title" id="title">Qoder</div>
             <div class="sub" id="sub">未运行</div>
@@ -34,6 +35,7 @@
         </div>
         <div class="headline-side">
           <span class="queue" id="queue" hidden></span>
+          <span class="clock" id="clock-detail">--:--</span>
           <span class="position" id="position"></span>
         </div>
       </div>
@@ -57,13 +59,17 @@
           <strong id="m-tps">—</strong>
         </div>
         <div class="metric-card">
+          <span class="label">输出 tokens</span>
+          <strong id="m-tokens">—</strong>
+        </div>
+        <div class="metric-card">
           <span class="label">最近 5 轮</span>
           <div class="spark-bars" id="spark"></div>
         </div>
       </div>
 
       <div class="actions" id="actions" hidden>
-        <button class="primary" id="open-qoder">打开 Qoder</button>
+        <button class="primary" id="open-qoder">打开应用</button>
         <button class="primary" id="handle" hidden>去处理</button>
         <button id="skip" hidden>跳过</button>
       </div>

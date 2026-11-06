@@ -8,20 +8,29 @@
 </head>
 <body>
   <main class="panel">
-    <header class="head">
-      <div>
-        <h1>设置</h1>
-        <p>选择哪些 agent 显示在刘海屏中；标注“暂未接入”的目前只保存开关状态</p>
+    <aside class="side">
+      <div class="side-title">设置</div>
+      <button class="nav active" type="button" data-section="agents">智能体</button>
+      <button class="nav" type="button" data-section="rules">规则</button>
+    </aside>
+
+    <div class="content">
+      <header class="head">
+        <h1 id="section-title">智能体</h1>
+        <p id="section-desc">选择哪些 agent 显示在刘海屏中</p>
+      </header>
+
+      <div class="scroll">
+        <section class="agents" id="agents"></section>
+        <section class="rules" id="rules" hidden></section>
       </div>
-    </header>
 
-    <section class="agents" id="agents"></section>
-
-    <footer class="foot">
-      <span class="error" id="error"></span>
-      <button id="cancel">取消</button>
-      <button class="primary" id="save">保存</button>
-    </footer>
+      <footer class="foot">
+        <span class="error" id="error"></span>
+        <button id="cancel">取消</button>
+        <button class="primary" id="save">保存</button>
+      </footer>
+    </div>
   </main>
 
   <script src="./settings.js"></script>

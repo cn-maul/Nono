@@ -28,6 +28,7 @@ type Collector struct {
 	baseline     bool
 	queue        noticeQueue
 	qoderEnabled bool
+	muteDone     bool
 }
 
 func NewCollector() *Collector {
@@ -64,6 +65,20 @@ func (c *Collector) SetQoderEnabled(enabled bool) {
 	c.prev = map[string]State{}
 	c.queue.clear()
 	c.baseline = false
+}
+
+// SetNotifyCompleted controls whether task-finished states enter the queue.
+func (c *Collector) SetNotifyCompleted(enabled bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.muteDone = !enabled
+	if c.muteDone {
+		for _, notice := range c.queue.snapshot() {
+			if notice.Kind == NoticeCompleted {
+				c.queue.remove(notice.SessionID)
+			}
+		}
+	}
 }
 
 func (c *Collector) Collect(ctx context.Context) Snapshot {
@@ -106,6 +121,15 @@ func (c *Collector) Collect(ctx context.Context) Snapshot {
 		return snapshot
 	}
 	snapshot.QoderRunning = true
+	if c.store == nil && c.roots.DBPath != "" {
+		// Qoder may have held the database when we started; retry until it
+		// opens instead of reporting "database unavailable" forever.
+		if store, err := OpenStore(c.roots.DBPath); err == nil {
+			c.store = store
+		} else if snapshot.Error == "" {
+			snapshot.Error = err.Error()
+		}
+	}
 	if c.store == nil {
 		snapshot.Error = "Qoder 数据库不可用"
 		return snapshot
@@ -116,6 +140,9 @@ func (c *Collector) Collect(ctx context.Context) Snapshot {
 	rows, err := c.store.Sessions(ctx, now.Add(-sessionWindow))
 	if err != nil {
 		snapshot.Error = err.Error()
+		c.store.Close()
+		c.store = nil
+		rows = nil
 	}
 
 	have := make(map[string]bool, len(rows))
@@ -123,6 +150,9 @@ func (c *Collector) Collect(ctx context.Context) Snapshot {
 		have[row.ID] = true
 	}
 	for id, control := range c.logs.States() {
+		if c.store == nil {
+			break
+		}
 		if have[id] || control.At.IsZero() || now.Sub(control.At) > activeWindow {
 			continue
 		}
@@ -204,6 +234,11 @@ func (c *Collector) updateNotices(sessions []Session, now time.Time) {
 		old, had := c.prev[session.ID]
 		if kind, ok := session.State.NoticeKind(); ok {
 			if !had || old != session.State {
+				if kind == NoticeCompleted && c.muteDone {
+					c.queue.remove(session.ID)
+					c.prev[session.ID] = session.State
+					continue
+				}
 				since := session.noticeAt
 				if since.IsZero() {
 					since = now

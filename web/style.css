@@ -6,11 +6,17 @@
   --text: #e9ecf2;
   --dim: #8b93a3;
   --dimmer: #5f6776;
-  --run: #38d996;
-  --wait: #6ea8ff;
-  --warn: #f5b83d;
-  --fail: #ff5c6c;
-  --accent: #4f7cff;
+  --run: #48b896;
+  --wait: #6e96ce;
+  --warn: #d0a464;
+  --fail: #ca6872;
+  --accent: #5a82e6;
+}
+
+@property --tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #8b93a3;
 }
 
 * {
@@ -40,18 +46,100 @@ body {
 }
 
 .notch {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
+  --tint: #8b93a3;
+  --fill: 0;
+  --edge: 0;
   background: var(--bg);
   border: 0;
   border-radius: 0 0 18px 18px;
   overflow: hidden;
+  transition: --tint 0.4s ease;
+}
+
+/* Status tint: the whole collapsed notch takes the color of the current
+   state so it reads at a glance against any wallpaper. */
+.notch::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tint) 100%, transparent) 0%,
+    color-mix(in srgb, var(--tint) 50%, transparent) 52%,
+    color-mix(in srgb, var(--tint) 10%, transparent) 100%
+  );
+  opacity: calc(var(--fill) * var(--fill-scale, 1));
+  transition: opacity 0.25s ease;
+}
+
+.notch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border: 1.5px solid color-mix(in srgb, var(--tint) calc(var(--edge) * 100%), transparent);
+  border-radius: inherit;
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--tint) calc(var(--edge) * 25%), transparent);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.notch[data-tone="running"] {
+  --tint: #48b896;
+  --fill: 0.17;
+  --edge: 0.76;
+}
+
+.notch[data-tone="waiting"] {
+  --tint: #6e96ce;
+  --fill: 0.18;
+  --edge: 0.78;
+}
+
+.notch[data-tone="warn"] {
+  --tint: #d0a464;
+  --fill: 0.2;
+  --edge: 0.82;
+}
+
+.notch[data-tone="fail"] {
+  --tint: #ca6872;
+  --fill: 0.18;
+  --edge: 0.82;
+}
+
+.notch[data-tone="idle"] {
+  --tint: #788caa;
+  --fill: 0.05;
+  --edge: 0.2;
+}
+
+body.expanded .notch {
+  --fill-scale: 0.32;
+}
+
+/* The outline breathes with the state: calm while working, urgent when the
+   agent needs the user. */
+body:not(.expanded) .notch[data-tone="running"]::after {
+  animation: glow-breathe 3.2s ease-in-out infinite;
+}
+
+body:not(.expanded) .notch[data-tone="waiting"]::after,
+body:not(.expanded) .notch[data-tone="warn"]::after,
+body:not(.expanded) .notch[data-tone="fail"]::after {
+  animation: alert-pulse 1.6s ease-in-out infinite;
 }
 
 .bar {
   position: relative;
+  z-index: 1;
   flex: 1 1 auto;
   display: flex;
   align-items: center;
@@ -59,6 +147,10 @@ body {
 
 body.expanded .bar {
   display: none;
+}
+
+body:not(.expanded) .bar {
+  animation: pill-in 0.24s cubic-bezier(0.2, 1.1, 0.3, 1);
 }
 
 .pill {
@@ -70,6 +162,11 @@ body.expanded .bar {
   padding: 0 30px;
   cursor: pointer;
   overflow: hidden;
+  transition: transform 0.16s ease;
+}
+
+.pill:active {
+  transform: scale(0.985);
 }
 
 .pill:hover {
@@ -77,59 +174,131 @@ body.expanded .bar {
 }
 
 .logo {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   border-radius: 5px;
   flex: 0 0 auto;
 }
 
 .dot {
+  position: relative;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   flex: 0 0 auto;
   background: var(--dimmer);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dot.running::after {
+  border-color: var(--run);
+  animation: dot-ring 1.8s ease-out infinite;
+}
+
+.dot.waiting::after {
+  border-color: var(--wait);
+  animation: dot-ring 1.4s ease-out infinite;
+}
+
+.dot.warn::after,
+.dot.fail::after {
+  border-color: var(--warn);
+  animation: dot-ring 1.2s ease-out infinite;
+}
+
+.dot.fail::after {
+  border-color: var(--fail);
 }
 
 .dot.running {
   background: var(--run);
-  box-shadow: 0 0 8px rgba(56, 217, 150, 0.55);
+  box-shadow: 0 0 8px rgba(72, 184, 150, 0.5);
   animation: pulse 1.8s ease-in-out infinite;
 }
 
 .dot.waiting {
   background: var(--wait);
-  box-shadow: 0 0 8px rgba(110, 168, 255, 0.55);
+  box-shadow: 0 0 8px rgba(110, 150, 206, 0.5);
 }
 
 .dot.warn {
   background: var(--warn);
-  box-shadow: 0 0 8px rgba(245, 184, 61, 0.55);
+  box-shadow: 0 0 8px rgba(208, 164, 100, 0.5);
 }
 
 .dot.fail {
   background: var(--fail);
-  box-shadow: 0 0 8px rgba(255, 92, 108, 0.55);
+  box-shadow: 0 0 8px rgba(202, 104, 114, 0.5);
 }
 
 .project {
+  flex: 0 1 auto;
+  min-width: 0;
   font-weight: 600;
   letter-spacing: 0.1px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .state {
+  flex: 0 0 auto;
   color: var(--dim);
   white-space: nowrap;
+  font-weight: 500;
+  transition: color 0.4s ease;
+}
+
+.notch[data-tone="running"] .state {
+  color: #86d3b6;
+}
+
+.notch[data-tone="waiting"] .state {
+  color: #9dbbdf;
+}
+
+.notch[data-tone="warn"] .state {
+  color: #ddc08a;
+}
+
+.notch[data-tone="fail"] .state {
+  color: #e29aa3;
 }
 
 .metric {
+  flex: 0 0 auto;
   color: var(--dimmer);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .metric:first-of-type {
+  margin-left: 12px;
+}
+
+.clock {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+}
+
+.clock.tick {
+  animation: clock-tick 0.32s ease;
+}
+
+body.no-clock .metric:first-of-type {
   margin-left: auto;
 }
 
@@ -137,11 +306,15 @@ body.expanded .bar {
   flex: 0 0 auto;
   padding: 3px 6px;
   border-radius: 5px;
-  background: rgba(245, 184, 61, 0.14);
+  background: rgba(208, 164, 100, 0.14);
   color: var(--warn);
   font-size: 9.5px;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.badge:not([hidden]) {
+  animation: badge-pop 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
 .edge {
@@ -191,19 +364,74 @@ body.expanded .edge:hover {
   right: 0;
 }
 
+/* The detail layer is always laid out at the expanded size and clipped by the
+   notch, so growing the window never triggers a reflow mid-animation. */
 .detail {
-  display: none;
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100%;
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  width: 560px;
+  height: 224px;
   padding: 14px 36px 14px;
   flex-direction: column;
   gap: 11px;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 body.expanded .detail {
-  display: flex;
-  animation: reveal 0.16s ease-out;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.expanded .headline {
+  animation: rise 0.3s 0.08s cubic-bezier(0.2, 1.1, 0.3, 1) both;
+}
+
+body.expanded .status-line {
+  animation: rise 0.3s 0.11s cubic-bezier(0.2, 1.1, 0.3, 1) both;
+}
+
+body.expanded .metric-card {
+  animation: rise 0.32s cubic-bezier(0.2, 1.1, 0.3, 1) both;
+}
+
+body.expanded .metric-card:nth-child(1) {
+  animation-delay: 0.14s;
+}
+
+body.expanded .metric-card:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+body.expanded .metric-card:nth-child(3) {
+  animation-delay: 0.18s;
+}
+
+body.expanded .metric-card:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+body.expanded .metric-card:nth-child(5) {
+  animation-delay: 0.22s;
+}
+
+body.expanded .actions {
+  animation: rise 0.32s 0.26s cubic-bezier(0.2, 1.1, 0.3, 1) both;
+}
+
+body.expanded .detail {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+body.collapsing .detail {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.97);
 }
 
 .headline {
@@ -281,22 +509,22 @@ body.expanded .detail {
   border-radius: 6px;
   font-size: 10.5px;
   font-weight: 600;
-  background: rgba(56, 217, 150, 0.12);
+  background: rgba(72, 184, 150, 0.12);
   color: var(--run);
 }
 
 .chip.waiting {
-  background: rgba(110, 168, 255, 0.12);
+  background: rgba(110, 150, 206, 0.12);
   color: var(--wait);
 }
 
 .chip.warn {
-  background: rgba(245, 184, 61, 0.13);
+  background: rgba(208, 164, 100, 0.13);
   color: var(--warn);
 }
 
 .chip.fail {
-  background: rgba(255, 92, 108, 0.13);
+  background: rgba(202, 104, 114, 0.13);
   color: var(--fail);
 }
 
@@ -319,7 +547,7 @@ body.expanded .detail {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -332,6 +560,13 @@ body.expanded .detail {
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.035);
   min-width: 0;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .metric-card .label {
@@ -345,6 +580,10 @@ body.expanded .detail {
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2px;
+}
+
+.metric-card strong.flash {
+  animation: value-flash 0.38s ease-out;
 }
 
 .spark-bars {
@@ -363,6 +602,8 @@ body.expanded .detail {
   border-radius: 2px;
   background: var(--wait);
   opacity: 0.8;
+  transform-origin: bottom;
+  animation: bar-grow 0.42s cubic-bezier(0.2, 1.1, 0.3, 1) backwards;
 }
 
 .spark-empty {
@@ -403,7 +644,7 @@ body.expanded .detail {
 }
 
 .actions .primary:hover {
-  background: #6289ff;
+  background: #6d92ee;
   color: #fff;
 }
 
@@ -422,36 +663,140 @@ body.expanded .detail {
   white-space: nowrap;
 }
 
+
 @keyframes switch-left {
   from {
-    opacity: 0.35;
-    transform: translateX(10px);
+    opacity: 0.2;
+    transform: translateX(16px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
 @keyframes switch-right {
   from {
-    opacity: 0.35;
-    transform: translateX(-10px);
+    opacity: 0.2;
+    transform: translateX(-16px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
 .notch.switch-left .pill,
 .notch.switch-left .detail {
-  animation: switch-left 0.15s ease-out;
+  animation: switch-left 0.24s cubic-bezier(0.2, 1.1, 0.3, 1);
 }
 
 .notch.switch-right .pill,
 .notch.switch-right .detail {
-  animation: switch-right 0.15s ease-out;
+  animation: switch-right 0.24s cubic-bezier(0.2, 1.1, 0.3, 1);
+}
+
+.notch.switch-left .logo,
+.notch.switch-right .logo {
+  animation: logo-pop 0.32s cubic-bezier(0.2, 1.35, 0.4, 1);
+}
+
+@keyframes logo-pop {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.7) rotate(-10deg);
+  }
+  60% {
+    transform: scale(1.08) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes pill-in {
+  from {
+    opacity: 0.3;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dot-ring {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.7);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+@keyframes badge-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bar-grow {
+  from {
+    opacity: 0.15;
+    transform: scaleY(0.15);
+  }
+  to {
+    opacity: 0.8;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes value-flash {
+  0% {
+    color: #fff;
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes clock-tick {
+  0% {
+    opacity: 0.4;
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse {
@@ -464,13 +809,32 @@ body.expanded .detail {
   }
 }
 
-@keyframes reveal {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
+@keyframes alert-pulse {
+  0%,
+  100% {
     opacity: 1;
-    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes glow-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

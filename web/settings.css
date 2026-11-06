@@ -14,6 +14,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   width: 100%;
@@ -34,13 +38,65 @@ body {
 
 .panel {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   width: 100%;
   height: 100%;
   background: var(--bg);
   border: 0;
   border-radius: 0;
   overflow: hidden;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 148px;
+  flex: 0 0 auto;
+  padding: 18px 10px;
+  border-right: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.018);
+  --app-region: drag;
+}
+
+.side-title {
+  padding: 0 10px 12px;
+  color: var(--dimmer);
+  font-size: 11px;
+  letter-spacing: 0.4px;
+}
+
+.nav {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  --app-region: no-drag;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.nav.active {
+  background: rgba(90, 130, 230, 0.16);
+  color: #b9ccf5;
+  font-weight: 600;
+}
+
+.content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .head {
@@ -61,11 +117,15 @@ body {
   font-size: 11px;
 }
 
-.agents {
+.scroll {
   flex: 1 1 auto;
   min-height: 0;
   padding: 4px 20px 10px;
   overflow-y: auto;
+}
+
+.agents {
+  flex: 0 0 auto;
 }
 
 .agent {
@@ -135,6 +195,35 @@ body {
 
 .agent.missing .path {
   color: #b4767c;
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 0;
+  border-top: 1px solid var(--line);
+}
+
+.rule:first-child {
+  border-top: 0;
+}
+
+.rule-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rule-title {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.rule-desc {
+  margin-top: 5px;
+  color: var(--dimmer);
+  font-size: 10.5px;
+  line-height: 1.5;
 }
 
 .switch {
@@ -230,11 +319,11 @@ body {
   color: #fff;
 }
 
-.agents::-webkit-scrollbar {
+.scroll::-webkit-scrollbar {
   width: 8px;
 }
 
-.agents::-webkit-scrollbar-thumb {
+.scroll::-webkit-scrollbar-thumb {
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.12);
 }

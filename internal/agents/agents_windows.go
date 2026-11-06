@@ -42,13 +42,22 @@ func Detect(id string) Info {
 		return detect("opencode", []string{
 			filepath.Join(appData(), "npm", "opencode.cmd"),
 		})
+	case "zcode":
+		return detectFile(filepath.Join(localAppData(), "Programs", "ZCode", "ZCode.exe"))
 	case "claude-code":
-		return detect("claude", []string{
+		info := detect("claude", []string{
 			filepath.Join(home(), ".claude", "local", "claude.exe"),
 			filepath.Join(home(), ".local", "bin", "claude.exe"),
 			filepath.Join(appData(), "npm", "claude.cmd"),
 			filepath.Join(localAppData(), "Programs", "Claude", "Claude.exe"),
 		})
+		if !info.Installed {
+			dir := filepath.Join(home(), ".claude")
+			if exists(filepath.Join(dir, "projects")) || exists(filepath.Join(dir, "settings.json")) {
+				return Info{Installed: true, Path: dir}
+			}
+		}
+		return info
 	}
 	return Info{}
 }

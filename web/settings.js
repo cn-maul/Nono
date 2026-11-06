@@ -22,7 +22,18 @@ function element(tag, className, text) {
   return node;
 }
 
-function render(agents) {
+function toggleInput(dataset, id, checked, disabled) {
+  const toggle = element("label", "switch");
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.dataset[dataset] = id;
+  input.checked = checked;
+  input.disabled = !!disabled;
+  toggle.append(input, element("span"));
+  return toggle;
+}
+
+function renderAgents(agents) {
   const box = $("agents");
   box.textContent = "";
   for (const agent of agents) {
@@ -50,40 +61,86 @@ function render(agents) {
     }
     info.append(nameLine, path);
 
-    const toggle = element("label", "switch");
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.dataset.agent = agent.id;
-    input.checked = agent.installed && agent.enabled;
-    input.disabled = !agent.installed;
-    toggle.append(input, element("span"));
-
-    row.append(icon, info, toggle);
+    row.append(icon, info, toggleInput("agent", agent.id, agent.installed && agent.enabled, !agent.installed));
     box.append(row);
   }
 }
 
+function renderRules(rules) {
+  const box = $("rules");
+  box.textContent = "";
+  for (const rule of rules) {
+    const row = element("div", "rule");
+    const info = element("div", "rule-info");
+    info.append(
+      element("div", "rule-title", rule.title),
+      element("div", "rule-desc", rule.description)
+    );
+    row.append(info, toggleInput("rule", rule.id, !!rule.enabled, false));
+    box.append(row);
+  }
+}
+
+const SECTIONS = {
+  agents: {
+    title: "智能体",
+    description: "选择哪些 agent 显示在刘海屏中",
+    box: "agents",
+  },
+  rules: {
+    title: "规则",
+    description: "控制刘海的状态切换与显示行为，保存后立即生效",
+    box: "rules",
+  },
+};
+
+function switchSection(name) {
+  const section = SECTIONS[name];
+  if (!section) {
+    return;
+  }
+  for (const button of document.querySelectorAll(".nav")) {
+    button.classList.toggle("active", button.dataset.section === name);
+  }
+  $("section-title").textContent = section.title;
+  $("section-desc").textContent = section.description;
+  $("agents").hidden = section.box !== "agents";
+  $("rules").hidden = section.box !== "rules";
+}
+
 async function load() {
   try {
-    const agents = await call("Notch.SettingsData");
-    render(agents || []);
+    const [agents, rules] = await Promise.all([
+      call("Notch.SettingsData"),
+      call("Notch.RulesData"),
+    ]);
+    renderAgents(agents || []);
+    renderRules(rules || []);
   } catch (err) {
     console.error(err);
     showError("读取设置失败");
   }
 }
 
-async function save() {
-  const toggles = [];
-  for (const input of document.querySelectorAll("input[data-agent]")) {
-    if (input.disabled) {
-      continue;
-    }
-    toggles.push({ id: input.dataset.agent, enabled: input.checked });
+function collect(selector) {
+  const out = [];
+  for (const input of document.querySelectorAll(selector)) {
+    out.push({ id: input.dataset.agent || input.dataset.rule, enabled: input.checked });
   }
+  return out;
+}
+
+async function save() {
+  const agents = [];
+  for (const input of document.querySelectorAll("input[data-agent]")) {
+    if (!input.disabled) {
+      agents.push({ id: input.dataset.agent, enabled: input.checked });
+    }
+  }
+  const payload = { agents, rules: collect("input[data-rule]") };
   $("save").disabled = true;
   try {
-    const ok = await call("Notch.SaveSettings", toggles);
+    const ok = await call("Notch.SaveSettings", payload);
     if (!ok) {
       showError("保存失败");
       $("save").disabled = false;
@@ -101,6 +158,10 @@ async function cancel() {
   } catch (err) {
     console.error(err);
   }
+}
+
+for (const button of document.querySelectorAll(".nav")) {
+  button.addEventListener("click", () => switchSection(button.dataset.section));
 }
 
 $("save").addEventListener("click", save);

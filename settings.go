@@ -6,7 +6,9 @@ import (
 	"github.com/egoist/mygo"
 
 	"nono/internal/agents"
+	"nono/internal/codex"
 	"nono/internal/config"
+	"nono/internal/qoder"
 )
 
 type AgentSetting struct {
@@ -27,16 +29,56 @@ var agentCatalog = []struct {
 	Supported bool
 }{
 	{"qoder", "Qoder", "./assets/qoder.png", true},
-	{"codex", "Codex", "./assets/codex.png", false},
-	{"workbuddy", "WorkBuddy", "./assets/workbuddy.png", false},
-	{"deepseek-harness", "DeepSeek Harness", "./assets/deepseek-harness.png", false},
-	{"opencode", "OpenCode", "./assets/opencode.png", false},
-	{"claude-code", "Claude Code", "./assets/claude-code.png", false},
+	{"codex", "Codex", "./assets/codex.png", true},
+	{"opencode", "OpenCode", "./assets/opencode.png", true},
+	{"claude-code", "Claude Code", "./assets/claude-code.png", true},
+	{"zcode", "ZCode", "./assets/zcode.png", true},
+	{"workbuddy", "WorkBuddy", "./assets/workbuddy.png", true},
+	{"deepseek-harness", "DeepSeek Harness", "./assets/deepseek-harness.png", true},
 }
 
 type AgentToggle struct {
 	ID      string `json:"id"`
 	Enabled bool   `json:"enabled"`
+}
+
+type SettingsSave struct {
+	Agents []AgentToggle `json:"agents"`
+	Rules  []AgentToggle `json:"rules"`
+}
+
+type RuleSetting struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Enabled     bool   `json:"enabled"`
+}
+
+var ruleCatalog = []struct {
+	ID          string
+	Title       string
+	Description string
+}{
+	{config.RuleAutoFollow, "自动跟随运行中的会话", "有会话开始运行时，刘海自动切换到该 agent 的会话；手动切换后 30 秒内不会被抢回"},
+	{config.RuleNotifyCompleted, "任务结束通知", "任务完成时进入通知队列并自动切换到完成的会话"},
+	{config.RuleCollapseOnOutside, "点击外部收起", "展开状态下点击刘海以外的区域自动收起"},
+	{config.RuleShowClock, "显示时间", "在刘海右侧显示当前时间"},
+}
+
+func (n *Notch) RulesData() []RuleSetting {
+	n.mu.Lock()
+	cfg := n.cfg
+	n.mu.Unlock()
+	out := make([]RuleSetting, 0, len(ruleCatalog))
+	for _, def := range ruleCatalog {
+		out = append(out, RuleSetting{
+			ID:          def.ID,
+			Title:       def.Title,
+			Description: def.Description,
+			Enabled:     cfg.RuleEnabled(def.ID),
+		})
+	}
+	return out
 }
 
 func (n *Notch) SettingsData() []AgentSetting {
@@ -60,18 +102,30 @@ func (n *Notch) SettingsData() []AgentSetting {
 	return out
 }
 
-func (n *Notch) SaveSettings(toggles []AgentToggle) bool {
-	known := map[string]bool{}
+func (n *Notch) SaveSettings(payload SettingsSave) bool {
+	knownAgents := map[string]bool{}
 	for _, def := range agentCatalog {
-		known[def.ID] = true
+		knownAgents[def.ID] = true
+	}
+	knownRules := map[string]bool{}
+	for _, def := range ruleCatalog {
+		knownRules[def.ID] = true
 	}
 	n.mu.Lock()
 	if n.cfg.Agents == nil {
 		n.cfg.Agents = map[string]config.Agent{}
 	}
-	for _, toggle := range toggles {
-		if known[toggle.ID] {
+	if n.cfg.Rules == nil {
+		n.cfg.Rules = config.DefaultRules()
+	}
+	for _, toggle := range payload.Agents {
+		if knownAgents[toggle.ID] {
 			n.cfg.Agents[toggle.ID] = config.Agent{Enabled: toggle.Enabled}
+		}
+	}
+	for _, toggle := range payload.Rules {
+		if knownRules[toggle.ID] {
+			n.cfg.Rules[toggle.ID] = toggle.Enabled
 		}
 	}
 	cfg := n.cfg
@@ -81,7 +135,17 @@ func (n *Notch) SaveSettings(toggles []AgentToggle) bool {
 		log.Printf("settings: save: %v", err)
 		return false
 	}
-	n.collector.SetQoderEnabled(cfg.AgentEnabled("qoder"))
+	n.collector.SetQoderEnabled(cfg.AgentEnabled(qoder.AgentID))
+	n.codex.SetEnabled(cfg.AgentEnabled(codex.AgentID))
+	for _, extra := range n.extras {
+		extra.SetEnabled(cfg.AgentEnabled(extra.ID()))
+	}
+	notifyDone := cfg.RuleEnabled(config.RuleNotifyCompleted)
+	n.collector.SetNotifyCompleted(notifyDone)
+	n.codex.SetNotifyCompleted(notifyDone)
+	for _, extra := range n.extras {
+		extra.SetNotifyCompleted(notifyDone)
+	}
 	n.closeSettings()
 	return true
 }
